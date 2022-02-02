@@ -3,5 +3,7 @@
 Sistema básico de Gestão Escolar.
 
 Funções:
-- Cadastro de RMG/Nome/Idade/CPF/Nascimento/Sexo de alunos em uma DataBase SQL
-- Delete de alunos
+- Cadastro de de alunos em um DataBase SQL
+- Edição e remoção dos cadastrados na própria GUI
+- Opção para salvar os dados em um arquivo .txt
+- Busca de alunos cadastrados por RGM ou CPF
