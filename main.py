@@ -1,137 +1,194 @@
-import PySimpleGUI as sg
-import pyodbc
-import pandas as pd
-
-dados_conexao = (
-    "Driver={SQL Server};"
-    "Server=DESKTOP-3PKKPL3\SQLEXPRESS;"
-    "Database=PythonSQL;"
-)
-
-conexao = pyodbc.connect(dados_conexao)
-print("Conexão Bem Sucedida")
-cursor = conexao.cursor()
-
-query = "SELECT * FROM Alunos;"
-df = pd.read_sql(query, conexao)
-print(df.head(26))
+from mailbox import NotEmptyError
+from PyQt5 import QtWidgets, uic
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QPixmap
+import sys
+import sqlite3
 
 
-
-
-
-layoutCadastro = [
-    [sg.Text('RGM:'), sg.Text('      '), sg.InputText(size=(12, 12), key='rgm'), sg.Text(' '*5)],
-    [sg.Text('Nome:'), sg.Text('     '),  sg.InputText(size=(12, 12), key='nome'), sg.Text(' '*35)],
-    [sg.Text('Idade:'), sg.Text('      '),  sg.InputText(size=(12, 12), key='idade')],
-    [sg.Text('Nascimento:'),  sg.InputText(size=(12, 12), key='nasc')],
-    [sg.Text('CPF:'), sg.Text('       '),  sg.InputText(size=(12, 12), key='cpf')],
-    [sg.Radio('Masculino', 'RADIO1', key='masc'), sg.Radio('Feminino', 'RADIO2', key='fem')],
-    [sg.Button('Enviar', key='cadastro')]
-]
-
-layoutDeletar = [
-    [sg.Text('Deletar por RGM:'), sg.InputText(size=(12,12), key='deletergm')],
-    [sg.Text('Deletar por Nome:'), sg.InputText(size=(12,12), key='deletenome')],
-    [sg.Button('Deletar', key='deletar')]
-]
-
-
-layoutMain = [
-    [sg.Frame('', layout=layoutCadastro, size=(410,220))]
-]
-
-tabs = [
-    [sg.TabGroup([[sg.Tab('Cadastro', layoutMain), sg.Tab('Deletar', layoutDeletar)]])]
-]
-
-
-mainlayout = [
-    [sg.Frame('', layout=tabs), sg.Multiline(df, size=(70,16), key='multi', background_color='#075c92', text_color='white')]
-]
-
-
-window = sg.Window('Escola', mainlayout, resizable=True)
-
-
-while True:
-    event, values = window.read()
-
-    rgmIn = values['rgm']
-    nomeIn = values['nome']  
-    idadeIn = values['idade']
-    nascIn = values['nasc']
-    cpfIn = values['cpf']
-    deletarrgm = values['deletergm']
-    deletarnome = values['deletenome']
-
-    if event == sg.WIN_CLOSED:
-        break
-
-    if event == 'cadastro':
-        if values['masc'] == True and values['fem'] == False:
-            comando = f"""INSERT INTO Alunos(RGM, Nome, Idade, Nascimento, CPF, Sexo)
-            VALUES
-                ({rgmIn}, '{nomeIn}', '{idadeIn}', '{nascIn}', '{cpfIn}', 'Masculino')"""
-
-            cursor.execute(comando)
-            cursor.commit()
-            window['rgm']('')
-            window['nome']('')
-            window['idade']('')
-            window['nasc']('')
-            window['cpf']('')
-            window.Element('masc').TKIntVar.set(0)
-            c = pyodbc.connect(dados_conexao)
-            cursor = c.cursor()
-            query = "SELECT * FROM Alunos;"
-            df = pd.read_sql(query, c)
-    
-            window['multi']('{}'.format(df))
-    
-        elif values['fem'] == True and values['masc'] == False:
-            comando = f"""INSERT INTO Alunos(RGM, Nome, Idade, Nascimento, CPF, Sexo)
-            VALUES
-                ({rgmIn}, '{nomeIn}', '{idadeIn}', '{nascIn}', '{cpfIn}', 'Feminino')"""
-
-            cursor.execute(comando)
-            cursor.commit()
-            window['rgm']('')
-            window['nome']('')
-            window['idade']('')
-            window['nasc']('')
-            window['cpf']('')
-            window.Element('fem').TKIntVar.set(0)
-            c = pyodbc.connect(dados_conexao)
-            cursor = c.cursor()
-            query = "SELECT * FROM Alunos;"
-            df = pd.read_sql(query, c)
-            window['multi']('{}'.format(df))
-
-
-    if event == 'deletar':
-        #print(values[0])
-        #print(values[1])
-        #print(values[2])
-        #print(values[3])
-        #print(values[4])
-        #print(values[5])
+def listardados():
+    banco = sqlite3.connect('pythonbase.db')
+    cursor = banco.cursor()
+    cursor.execute("SELECT * FROM Alunos")
+    dados_lidos = cursor.fetchall()
+    window.alunos.setRowCount(len(dados_lidos))
+    window.alunos.setColumnCount(5)
+    window.alunos.setHorizontalHeaderLabels(['RGM', 'Nome', 'Idade', 'CPF', 'Nascimento'])
+    for i in range(0, len(dados_lidos)):
+        for j in range(0, 5):
+            window.alunos.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
         
-        sg.Popup(f'Deseja deletar o RGM {deletarrgm}?', title='')
-        comando = f"""DELETE FROM Alunos WHERE RGM='{deletarrgm}';
-                      DELETE FROM Alunos WHERE Nome='{deletarnome}';"""
+    banco.close()
 
-        cursor.execute(comando)
-        cursor.commit()
-        window['deletergm']('')
-        window['deletenome']('')
-        c = pyodbc.connect(dados_conexao)
-        cursor = c.cursor()
-        query = "SELECT * FROM Alunos;"
-        df = pd.read_sql(query, c)
-        window['multi'](df)
+def salvardados():
+    rgm = window.rgmIn.text()
+    nome = window.nomeIn.text()
+    idade = window.idadeIn.text()
+    nascimento = window.nascIn.text()
+    cpf = window.cpfIn.text()
+
+    
+    banco = sqlite3.connect('pythonbase.db')
+    cursor = banco.cursor()
+    cursor.execute("INSERT INTO Alunos VALUES ('"+rgm+"', '"+nome+"', '"+idade+"', '"+cpf+"', '"+nascimento+"')")
+        
+    banco.commit()
+    banco.close()
+    listardados()
+
+    window.rgmIn.clear()
+    window.nomeIn.clear()
+    window.idadeIn.clear()
+    window.nascIn.clear()
+    window.cpfIn.clear()
+
+
+def deletardados():
+    drgm = window.rgmDelete.text()
+    dnome = window.nomeDelete.text()
+
+    banco = sqlite3.connect('pythonbase.db')
+    cursor = banco.cursor()
+    cursor.execute(f"""DELETE FROM ALUNOS WHERE RGM='{drgm}';""")
+    cursor.execute(f"""DELETE FROM ALUNOS WHERE Nome='{dnome}';""")
+    banco.commit()
+    banco.close()
+    listardados()
+
+    window.rgmDelete.clear()
+    window.nomeDelete.clear()
+
+def editardados():
+    rgm = window.rgmEdit.text()
+    nome = window.nomeEdit.text()
+    idade = window.idadeEdit.text()
+    nascimento = window.nascEdit.text()
+    cpf = window.cpfEdit.text()
+
+    try:
+        banco = sqlite3.connect('pythonbase.db')
+        cursor = banco.cursor()
+
+        cursor.execute(f"""UPDATE Alunos SET Nome = '{nome}', Idade = '{idade}', Nascimento = '{nascimento}', CPF = '{cpf}' WHERE RGM = {rgm};""")
+
+        banco.commit()
+        banco.close()
+        listardados()
+    
+    except sqlite3.OperationalError:
+        msg = QMessageBox()
+        msg.setWindowTitle("Erro")
+        msg.setText("Letras não são aceitas!")
+        msg.exec_()
+        
+    window.rgmEdit.clear()
+    window.nomeEdit.clear()
+    window.idadeEdit.clear()
+    window.nascEdit.clear()
+    window.cpfEdit.clear()
+
+def buscardados():
+    try:
+        rgm = window.rgmSearch.text()
+        
+        banco = sqlite3.connect('pythonbase.db')
+        cursor = banco.cursor()
+        cursor.execute(f"""SELECT * FROM Alunos WHERE RGM = {rgm};""")
+        dados_lidos = cursor.fetchall()
+        window.alunos_2.setRowCount(len(dados_lidos))
+        window.alunos_2.setColumnCount(5)
+        window.alunos_2.setHorizontalHeaderLabels(['RGM', 'Nome', 'Idade', 'CPF', 'Nascimento'])
+        for i in range(0, len(dados_lidos)):
+            for j in range(0, 5):
+                window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
+
+        banco.commit()
+        banco.close()
+        listardados()
+
+        window.rgmSearch.clear()
+    except sqlite3.OperationalError:
+        msg = QMessageBox()
+        msg.setWindowTitle("Erro")
+        msg.setText("Letras não são aceitas!")
+        msg.exec_()
+
+def buscarCpf():
+    cpf = window.cpfSearch.text()
+
+    banco = sqlite3.connect('pythonbase.db')
+    cursor = banco.cursor()
+    cursor.execute(f"""SELECT * FROM Alunos WHERE CPF = '{cpf}';""")
+    dados_lidos = cursor.fetchall()
+    window.alunos_2.setRowCount(len(dados_lidos))
+    window.alunos_2.setColumnCount(5)
+    window.alunos_2.setHorizontalHeaderLabels(['RGM', 'Nome', 'Idade', 'CPF', 'Nascimento'])
+    for i in range(0, len(dados_lidos)):
+        for j in range(0, 5):
+            window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
+    banco.commit()
+    banco.close()
+    window.cpfSearch.clear()
+
+def ordenaridade():
+       
+    banco = sqlite3.connect('pythonbase.db')
+    cursor = banco.cursor()
+    cursor.execute(f"""SELECT * FROM Alunos ORDER BY Idade DESC;""")
+    dados_lidos = cursor.fetchall()
+    window.alunos_2.setRowCount(len(dados_lidos))
+    window.alunos_2.setColumnCount(5)
+    window.alunos_2.setHorizontalHeaderLabels(['RGM', 'Nome', 'Idade', 'CPF', 'Nascimento'])
+    for i in range(0, len(dados_lidos)):
+        for j in range(0, 5):
+            window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
+
+    banco.commit()
+    banco.close()
+    listardados()
+
+def ordenarnasc():
+    banco = sqlite3.connect('pythonbase.db')
+    cursor = banco.cursor()
+    cursor.execute(f"""SELECT * FROM Alunos ORDER BY Nascimento DESC;""")
+    dados_lidos = cursor.fetchall()
+    window.alunos_2.setRowCount(len(dados_lidos))
+    window.alunos_2.setColumnCount(5)
+    window.alunos_2.setHorizontalHeaderLabels(['RGM', 'Nome', 'Idade', 'CPF', 'Nascimento'])
+    for i in range(0, len(dados_lidos)):
+        for j in range(0, 5):
+            window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
+
+    banco.commit()
+    banco.close()
+    listardados()
+
+def salvartxt():
+    rgm = window.rgmIn.text()
+    nome = window.nomeIn.text()
+    idade = window.idadeIn.text()
+    nascimento = window.nascIn.text()
+    cpf = window.cpfIn.text()
+    f = open(f"rgm{rgm}.txt", "a")
+    f.write(f"RGM: {rgm}\nNome: {nome}\nIdade: {idade}\nNascimento: {nascimento}\nCPF: {cpf}")
+    f.close()
 
 
 
 
-window.close()
+app = QtWidgets.QApplication(sys.argv)
+window = uic.loadUi('alunos.ui')
+listardados()
+
+window.cadastrar.clicked.connect(salvardados)
+window.deletar.clicked.connect(deletardados)
+window.editar.clicked.connect(editardados)
+window.buscar.clicked.connect(buscardados)
+window.ordIdade.clicked.connect(ordenaridade)
+window.buscarCpf.clicked.connect(buscarCpf)
+window.ordnasc.clicked.connect(ordenarnasc)
+window.salvartxt_3.triggered.connect(salvartxt)
+
+
+window.show()
+app.exec()
