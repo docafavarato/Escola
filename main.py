@@ -3,7 +3,13 @@ from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QPixmap
 import sys
+from fpdf import FPDF
 import sqlite3
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+from reportlab.lib import colors
+import os
 
 
 def listardados():
@@ -130,6 +136,7 @@ def buscarCpf():
     banco.close()
     window.cpfSearch.clear()
 
+
 def ordenaridade():
        
     banco = sqlite3.connect('pythonbase.db')
@@ -173,12 +180,47 @@ def salvartxt():
     f.write(f"RGM: {rgm}\nNome: {nome}\nIdade: {idade}\nNascimento: {nascimento}\nCPF: {cpf}")
     f.close()
 
-
+def pdf():
+    nome = window.nomeIn.text()
+    rgm = window.rgmIn.text()
+    idade = window.idadeIn.text()
+    nascimento = window.nascIn.text()
+    cpf = window.cpfIn.text()
+    
+    fileName = f'rgm{rgm}.pdf'
+    documentTitle = f'{nome}'
+    title = f'{nome}'
+    subTitle = f'{nome}'
+    textLines = [
+        f'RGM: {rgm}',
+        f'Nome: {nome}',
+        f'Idade: {idade}',
+        f'Nascimento: {nascimento}',
+        f'CPF: {cpf}'
+    ]
+ 
+    pdf = canvas.Canvas(fileName)
+    pdf.setTitle(documentTitle)
+    pdf.drawCentredString(300, 770, subTitle)
+    pdf.setFillColorRGB(0, 0, 255)
+    pdf.setFont("Courier-Bold", 24)
+    pdf.line(30, 710, 550, 710)
+    text = pdf.beginText(40, 680)
+    text.setFont("Courier", 18)
+    text.setFillColor(colors.red)
+    for line in textLines:
+        text.textLine(line)
+    pdf.drawText(text)
+    pdf.save()
+    path = f'rgm{rgm}.pdf'
+    os.system(path)
 
 
 app = QtWidgets.QApplication(sys.argv)
 window = uic.loadUi('alunos.ui')
 listardados()
+window.alunos.horizontalHeader().setStretchLastSection(True)
+window.alunos.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
 window.cadastrar.clicked.connect(salvardados)
 window.deletar.clicked.connect(deletardados)
@@ -188,7 +230,8 @@ window.ordIdade.clicked.connect(ordenaridade)
 window.buscarCpf.clicked.connect(buscarCpf)
 window.ordnasc.clicked.connect(ordenarnasc)
 window.salvartxt_3.triggered.connect(salvartxt)
-
+window.pdf.triggered.connect(pdf)
+    
 
 window.show()
 app.exec()
