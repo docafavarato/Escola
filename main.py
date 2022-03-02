@@ -11,10 +11,10 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.lib import colors
 import os
 
+banco = sqlite3.connect('pythonbase.db')
+cursor = banco.cursor()
 
 def listardados():
-    banco = sqlite3.connect('pythonbase.db')
-    cursor = banco.cursor()
     cursor.execute("SELECT * FROM Alunos")
     dados_lidos = cursor.fetchall()
     window.alunos.setRowCount(len(dados_lidos))
@@ -23,8 +23,7 @@ def listardados():
     for i in range(0, len(dados_lidos)):
         for j in range(0, 5):
             window.alunos.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
-        
-    banco.close()
+     
 
 def salvardados():
     rgm = window.rgmIn.text()
@@ -33,13 +32,9 @@ def salvardados():
     nascimento = window.nascIn.text()
     cpf = window.cpfIn.text()
 
-    
-    banco = sqlite3.connect('pythonbase.db')
-    cursor = banco.cursor()
     cursor.execute("INSERT INTO Alunos VALUES ('"+rgm+"', '"+nome+"', '"+idade+"', '"+cpf+"', '"+nascimento+"')")
         
     banco.commit()
-    banco.close()
     listardados()
 
     window.rgmIn.clear()
@@ -52,13 +47,10 @@ def salvardados():
 def deletardados():
     drgm = window.rgmDelete.text()
     dnome = window.nomeDelete.text()
-
-    banco = sqlite3.connect('pythonbase.db')
-    cursor = banco.cursor()
+    
     cursor.execute(f"""DELETE FROM ALUNOS WHERE RGM='{drgm}';""")
     cursor.execute(f"""DELETE FROM ALUNOS WHERE Nome='{dnome}';""")
     banco.commit()
-    banco.close()
     listardados()
 
     window.rgmDelete.clear()
@@ -72,13 +64,9 @@ def editardados():
     cpf = window.cpfEdit.text()
 
     try:
-        banco = sqlite3.connect('pythonbase.db')
-        cursor = banco.cursor()
-
         cursor.execute(f"""UPDATE Alunos SET Nome = '{nome}', Idade = '{idade}', Nascimento = '{nascimento}', CPF = '{cpf}' WHERE RGM = {rgm};""")
 
         banco.commit()
-        banco.close()
         listardados()
     
     except sqlite3.OperationalError:
@@ -96,9 +84,6 @@ def editardados():
 def buscardados():
     try:
         rgm = window.rgmSearch.text()
-        
-        banco = sqlite3.connect('pythonbase.db')
-        cursor = banco.cursor()
         cursor.execute(f"""SELECT * FROM Alunos WHERE RGM = {rgm};""")
         dados_lidos = cursor.fetchall()
         window.alunos_2.setRowCount(len(dados_lidos))
@@ -109,7 +94,6 @@ def buscardados():
                 window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
 
         banco.commit()
-        banco.close()
         listardados()
 
         window.rgmSearch.clear()
@@ -121,9 +105,7 @@ def buscardados():
 
 def buscarCpf():
     cpf = window.cpfSearch.text()
-
-    banco = sqlite3.connect('pythonbase.db')
-    cursor = banco.cursor()
+    
     cursor.execute(f"""SELECT * FROM Alunos WHERE CPF = '{cpf}';""")
     dados_lidos = cursor.fetchall()
     window.alunos_2.setRowCount(len(dados_lidos))
@@ -133,14 +115,10 @@ def buscarCpf():
         for j in range(0, 5):
             window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
     banco.commit()
-    banco.close()
     window.cpfSearch.clear()
 
 
 def ordenaridade():
-       
-    banco = sqlite3.connect('pythonbase.db')
-    cursor = banco.cursor()
     cursor.execute(f"""SELECT * FROM Alunos ORDER BY Idade DESC;""")
     dados_lidos = cursor.fetchall()
     window.alunos_2.setRowCount(len(dados_lidos))
@@ -151,12 +129,9 @@ def ordenaridade():
             window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
 
     banco.commit()
-    banco.close()
     listardados()
 
 def ordenarnasc():
-    banco = sqlite3.connect('pythonbase.db')
-    cursor = banco.cursor()
     cursor.execute(f"""SELECT * FROM Alunos ORDER BY Nascimento DESC;""")
     dados_lidos = cursor.fetchall()
     window.alunos_2.setRowCount(len(dados_lidos))
@@ -167,7 +142,6 @@ def ordenarnasc():
             window.alunos_2.setItem(i, j, QtWidgets.QTableWidgetItem(str(dados_lidos[i][j])))
 
     banco.commit()
-    banco.close()
     listardados()
 
 def salvartxt():
@@ -235,3 +209,5 @@ window.pdf.triggered.connect(pdf)
 
 window.show()
 app.exec()
+
+banco.close()
