@@ -1,6 +1,7 @@
 # Escola
 
-A basic School Management System.
+## About
+> A basic School Management System.
 
 ## Functions
 > Sign up of the students in a SQL Database
