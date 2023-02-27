@@ -1,12 +1,12 @@
 # Escola
 
-Sistema básico de Gestão Escolar.
+A basic School Management System.
 
 ## Functions
-> Cadastro de de alunos em um DataBase SQL
+> Sign up of the students in a SQL Database
 
-> Edição e remoção dos cadastrados na própria GUI
+> Editing and removing the students info in the GUI itself
 
-> Opção para salvar os dados em um arquivo .txt ou .pdf
+> An option to save the data to a .txt or .pdf file
 
-> Busca de alunos cadastrados por RGM ou CPF
+> A search for students tool by their RGM or CPF
